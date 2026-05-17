@@ -1,6 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-lama-sky: #C3EBFA;
+  --color-lama-sky-light: #EDF9FD;
+  --color-lama-purple: #CFCEFF;
+  --color-lama-purple-light: #F1F0FF;
+  --color-lama-yellow: #FAE27C;
+  --color-lama-yellow-light: #FEFCE8;
+}
 
 .react-calendar {
   width: 100% !important;
@@ -102,7 +109,7 @@
   background-color: #fdf2fb !important;
 }
 
-.rbc-event-label{
+.rbc-event-label {
   color: gray !important;
   margin-bottom: 5px;
 }
