@@ -6,12 +6,12 @@
 
 | Package | Old | New |
 |---|---|---|
-| `next` | 14.2.5 | 15.3.2 |
-| `react` | ^18 | ^19.1.0 |
-| `react-dom` | ^18 | ^19.1.0 |
+| `next` | 14.2.5 | **16.2.6** |
+| `react` | ^18 | ^19.2.0 |
+| `react-dom` | ^18 | ^19.2.0 |
 | `tailwindcss` | ^3.4.1 | ^4.1.6 |
 | `eslint` | ^8 | ^9 |
-| `eslint-config-next` | 14.2.5 | 15.3.2 |
+| `eslint-config-next` | 14.2.5 | 16.2.6 |
 | `typescript` | ^5 | ^5.8.3 |
 | `@types/node` | ^20 | ^22 |
 | `@types/react` | ^18 | ^19 |
@@ -39,56 +39,100 @@
 - `.eslintrc.json` is **replaced** by `eslint.config.mjs`
 - Old `extends: "next/core-web-vitals"` now uses FlatCompat adapter
 
-### 3. Next.js 15
-- `params` and `searchParams` in `page.tsx` are now **async** — must be awaited:
-  ```tsx
-  // OLD
-  export default function Page({ params }: { params: { id: string } }) {}
+### 3. Next.js 16 (major upgrade from 14)
 
-  // NEW
-  export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-  }
-  ```
-- `--turbopack` flag added to `dev` script for faster HMR
-- `remotePatterns` in `next.config.mjs` now requires `protocol` field
+#### params / searchParams are async
+```tsx
+// OLD (Next.js 14)
+export default function Page({ params }: { params: { id: string } }) {}
 
-### 4. React 19
+// NEW (Next.js 15+)
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+}
+```
+
+#### middleware.js → proxy.js
+- `middleware.js` is deprecated in Next.js 16 — rename to `proxy.js`
+- Behavior is the same, just rename and adjust the exported function
+- Old `middleware.js` still works temporarily but will be removed in a future version
+
+#### Turbopack is now default
+- No need for `--turbopack` flag — it's the default bundler in Next.js 16
+- Production builds are up to **5× faster**, Fast Refresh up to **10× quicker**
+- Switch back to Webpack if needed: `next dev --no-turbopack`
+
+#### Cache Components (`use cache` directive)
+- New `use cache` directive replaces the old `experimental.ppr`
+- Gives explicit control over what is cached vs. recalculated per request
+- `revalidateTag()` and `updateTag()` APIs have been reworked
+
+#### Removed features
+- AMP support removed
+- `publicRuntimeConfig` and `serverRuntimeConfig` removed
+- `experimental.ppr` removed → replaced by Cache Components
+- Requires **Node.js 20.9+** and **TypeScript 5.1+**
+
+#### next.config.mjs — remotePatterns
+```js
+// OLD
+remotePatterns: [{ hostname: "images.pexels.com" }]
+
+// NEW (protocol required)
+remotePatterns: [{ protocol: "https", hostname: "images.pexels.com" }]
+```
+
+### 4. React 19.2
+- Next.js 16 officially adopts React 19.2
 - `ref` is now a regular prop — no more `React.forwardRef` needed
-- `ReactDOM.render` is removed — use `createRoot` (likely already done)
-- New hooks: `use()`, `useFormStatus()`, `useOptimistic()` available
+- New hooks available: `use()`, `useFormStatus()`, `useOptimistic()`
+- React Compiler support enabled
 
 ### 5. moment.js → dayjs
-- `moment` is deprecated and unmaintained
-- Replace all `import moment from 'moment'` with `import dayjs from 'dayjs'`
-- API is nearly identical:
-  ```ts
-  // OLD
-  moment(date).format('DD/MM/YYYY')
+- `moment` is deprecated and unmaintained — removed
+- Replace all imports:
+```ts
+// OLD
+import moment from 'moment'
+moment(date).format('DD/MM/YYYY')
 
-  // NEW
-  dayjs(date).format('DD/MM/YYYY')
-  ```
-- `react-big-calendar` uses moment as a localizer — update to:
-  ```tsx
-  import dayjs from 'dayjs'
-  import dayjsLocalizer from 'react-big-calendar/lib/localizers/dayjs'
-  const localizer = dayjsLocalizer(dayjs)
-  ```
+// NEW
+import dayjs from 'dayjs'
+dayjs(date).format('DD/MM/YYYY')
+```
+- For `react-big-calendar` localizer:
+```tsx
+import dayjs from 'dayjs'
+import dayjsLocalizer from 'react-big-calendar/lib/localizers/dayjs'
+const localizer = dayjsLocalizer(dayjs)
+```
 
 ---
 
-## Steps After Cloning This Branch
+## Steps After Cloning This Branch (Windows)
+
+```powershell
+# PowerShell
+Remove-Item -Recurse -Force node_modules
+Remove-Item package-lock.json
+
+npm install
+npm run dev
+```
+
+```cmd
+:: Command Prompt
+rd /s /q node_modules
+del package-lock.json
+
+npm install
+npm run dev
+```
+
+## Or use the official Next.js upgrade codemod (recommended)
 
 ```bash
-# 1. Delete old lockfile and node_modules
-rm -rf node_modules package-lock.json
-
-# 2. Install fresh dependencies
-npm install
-
-# 3. Run dev server
-npm run dev
-
-# 4. Fix any TypeScript/ESLint errors surfaced by strict new versions
+npx @next/codemod@canary upgrade latest
 ```
+
+This auto-handles params/searchParams async migration and middleware → proxy rename.
